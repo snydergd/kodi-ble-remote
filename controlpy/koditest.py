@@ -10,9 +10,13 @@ async def main():
         print(movie)
 
     print(await kodi.call_method("Player.GetPlayers"))
-    print(await kodi.call_method("Player.PlayPause", playerid = 1))
+    #print(await kodi.call_method("Player.PlayPause", playerid = 1))
     print(await kodi.call_method("Player.GetActivePlayers"))
     print(await kodi.call_method("Player.GetItem", playerid = 1))
     print(await kodi.call_method("Player.GetProperties", playerid = 1, properties = ["speed"]))
+    resumepos = await kodi.call_method("VideoLibrary.GetMovieDetails", movieid = 43, properties = ["resume"])
+    print(resumepos)
+    await kodi.call_method("Player.Open", item = {"movieid":43}, options = {"resume": True})
+
 
 asyncio.run(main())

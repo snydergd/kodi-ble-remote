@@ -81,7 +81,7 @@ class MovieMenu(menu.Menu):
 
     async def play(self, movieid):
         kodi = await get_kodi()
-        await kodi.call_method("Player.Open", item = {"movieid":movieid})
+        await kodi.call_method("Player.Open", item = {"movieid":movieid}, options={"resume": True})
         title = [x for x in self.movies if x["movieid"] == movieid][0]["label"]
         print(f"Going to title {title}")
         self.parent.start_delegating(PlaybackMenu(self.client, title=title))
