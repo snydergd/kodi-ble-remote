@@ -10,8 +10,9 @@ async def main():
         print(movie)
 
     print(await kodi.call_method("Player.GetPlayers"))
-    #print(await kodi.call_method("Player.PlayPause", playerid = 1))
+    print(await kodi.call_method("Player.PlayPause", playerid = 1))
     print(await kodi.call_method("Player.GetActivePlayers"))
     print(await kodi.call_method("Player.GetItem", playerid = 1))
+    print(await kodi.call_method("Player.GetProperties", playerid = 1, properties = ["speed"]))
 
 asyncio.run(main())

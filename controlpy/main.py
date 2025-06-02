@@ -8,7 +8,7 @@ import math
 import traceback
 
 from menu import Menu, UI
-from kodimenus import MovieMenu, PlaybackMenu
+from kodimenus import MovieMenu, PlaybackMenu, SystemMenu
 
 WHITE=(255,255,255)
 BLACK=(0,0,0)
@@ -80,6 +80,7 @@ class MyClient:
         self.ui = Menu(self.client, "Main", {
             "Now Playing": lambda: PlaybackMenu(self.client),
             "Movies": MovieMenu(self.client),
+            "System": SystemMenu(self.client),
         }, self.done.release)
         self.clickpatterns = ClickPatterns(0.4, self.handle_click_pattern)
 

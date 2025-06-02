@@ -44,3 +44,10 @@ Tweak the `platformio.ini` file with your exact board (in my case, I'm using the
 
 Use your choice of platformio tooling.  In my case I use vscode and use the "Upload and Monitor" option to build and upload the code and view the output while working on it.
 
+# TODO
+
+- Better service UUIDs
+- Alphabetical selector (letter ranges (a-f, g-l, ...), letters (g, h, i, ...), then individual titles)
+- Other media - (TV Shows, Music, etc.)
+- Favorites
+- Package as zipapp

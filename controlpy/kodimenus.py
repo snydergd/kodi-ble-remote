@@ -19,19 +19,53 @@ class PlaybackMenu(menu.Menu):
             asyncio.create_task(self.commands[self.items[self.selected]]())
 
     async def playpause(self):
-        kodi = await get_kodi()
-        await kodi.call_method("Player.PlayPause", playerid = 1)
+        await self.load_title(redraw=False)
 
-    async def load_title(self):
         kodi = await get_kodi()
-        title = (await kodi.call_method("Player.GetItem", playerid = 1))["item"]["label"]
+        active_players = await kodi.call_method("Player.GetActivePlayers")
+
+        if len(active_players) == 0:
+            await kodi.call_method("Player.Open", item = {movieid: self.item['movieid']})
+        else:
+            await kodi.call_method("Player.PlayPause", playerid = 1)
+
+        await self.load_title()
+
+    async def check_playing(self):
+        kodi = await get_kodi()
+        speed = (await kodi.call_method("Player.GetProperties", playerid = 1, properties = ["speed"]))["speed"]
+        if speed > 0:
+            self.playing = True
+        else:
+            self.playing = False
+
+    async def load_title(self, redraw=True):
+        kodi = await get_kodi()
+        item = (await kodi.call_method("Player.GetItem", playerid = 1))["item"]
+        self.item = item
+        title = item["label"]
         print(f"title {title}")
-        self.update(title = title)
-        self.draw()
+
+        await self.check_playing()
+        if not title:
+            title = "Nothing playing"
+            commands = {}
+        elif self.playing:
+            commands = {
+                "Pause": self.playpause
+            }
+        else:
+            commands = {
+                "Play": self.playpause
+            }
+
+        self.update(title = title, commands=commands)
+        if redraw:
+            self.draw()
 
     def __init__(self, client, title=None):
         super().__init__(client, title if title else "Now Playing", {
-            "Play/Pause": self.playpause,
+            "Pause": self.playpause,
         })
         if not title:
             asyncio.create_task(self.load_title())
@@ -61,3 +95,14 @@ class MovieMenu(menu.Menu):
     def __init__(self, client):
         super().__init__(client, "Movies")
         asyncio.create_task(self.load_menu())
+
+
+class SystemMenu(menu.Menu):
+    async def shutdown(self):
+        kodi = await get_kodi()
+        await kodi.call_method("System.Shutdown")
+
+    def __init__(self, client):
+        super().__init__(client, "System", {
+            "Shutdown": lambda: asyncio.create_task(self.shutdown()),
+        })
