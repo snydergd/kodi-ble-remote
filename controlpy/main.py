@@ -6,6 +6,8 @@ import pygame
 import numpy as np
 import math
 import traceback
+import signal
+import os
 
 from menu import Menu, UI
 from kodimenus import MovieMenu, PlaybackMenu, SystemMenu
@@ -61,10 +63,15 @@ class MyClient:
 
     @classmethod
     async def create(cls):
+        print("Start")
         self = cls()
 
         self.client = BLE_client(None)
+        print("Sleep")
+        await asyncio.sleep(2)
+        print("Connect")
         await self.client.connect("78:21:84:99:62:C6", None, None, None)
+        print("Connected")
         self.client.set_receiver(self._handle)
         print("Setup Characteristics")
         await self.client.setup_chars("6E400002-B5A3-F393-E0A9-E50E24DCCA9E", "6E400003-B5A3-F393-E0A9-E50E24DCCA9E", "rw", True)
@@ -91,7 +98,6 @@ class MyClient:
             else:
                 return
         self.client.queue_send = replacement
-
         return self
 
     def _handle(self, data):
@@ -187,6 +193,14 @@ class MyClient:
         print("Writing picture")
         await self.send_picture(0, 0, bitmap)
 
+    async def shutdown(self):
+        print("Shutting down")
+        self.client.queue_send(b"C")
+        self.client.queue_send(b"D")
+        while not self.client._send_queue.empty():
+            await asyncio.sleep(0)
+        self.done.release()
+
     async def run(self):
         client = self.client
         
@@ -234,13 +248,18 @@ class MyClient:
 
         done, pending = await asyncio.wait(main_tasks, return_when=asyncio.FIRST_COMPLETED)
 
+def main():
+    print(os.getpid())
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
-async def main():
-    myClient = await MyClient.create()
-    await myClient.run()
+    myClient = loop.run_until_complete(MyClient.create())
+    print(f"Client {myClient}")
+    def shutdown(signum, frame):
+        print("I'm here")
+        loop.create_task(myClient.shutdown())
+    signal.signal(signal.SIGTERM, shutdown)
+    loop.run_until_complete(myClient.run())
 
-
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-loop.run_until_complete(main())
-print("Disconnected")
+if __name__ == "__main__":
+    main()

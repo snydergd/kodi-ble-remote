@@ -11,6 +11,7 @@ async def get_kodi():
         _kodi = Kodi(kc)
     return _kodi
 
+INITIAL_TITLE = "Now playing"
 class PlaybackMenu(menu.Menu):
     def select(self, parent=None):
         if self.is_special_selected():
@@ -31,6 +32,10 @@ class PlaybackMenu(menu.Menu):
 
         await self.load_title()
 
+    async def restart(self):
+        kodi = await get_kodi()
+        await kodi.call_method("Player.Seek", value={"percentage": 0}, playerid=1)
+
     async def check_playing(self):
         kodi = await get_kodi()
         speed = (await kodi.call_method("Player.GetProperties", playerid = 1, properties = ["speed"]))["speed"]
@@ -39,36 +44,37 @@ class PlaybackMenu(menu.Menu):
         else:
             self.playing = False
 
-    async def load_title(self, redraw=True):
+    async def load_title(self, title=None, redraw=True):
         kodi = await get_kodi()
-        item = (await kodi.call_method("Player.GetItem", playerid = 1))["item"]
-        self.item = item
-        title = item["label"]
+        if not title or title == INITIAL_TITLE:
+            item = (await kodi.call_method("Player.GetItem", playerid = 1))["item"]
+            self.item = item
+            title = item["label"]
         print(f"title {title}")
 
         await self.check_playing()
         if not title:
             title = "Nothing playing"
             commands = {}
-        elif self.playing:
-            commands = {
-                "Pause": self.playpause
-            }
         else:
-            commands = {
-                "Play": self.playpause
-            }
+            if self.playing:
+                commands = {
+                    "Pause": self.playpause
+                }
+            else:
+                commands = {
+                    "Play": self.playpause
+                }
+
+            commands["Restart"] = self.restart
 
         self.update(title = title, commands=commands)
         if redraw:
             self.draw()
 
-    def __init__(self, client, title=None):
-        super().__init__(client, title if title else "Now Playing", {
-            "Pause": self.playpause,
-        })
-        if not title:
-            asyncio.create_task(self.load_title())
+    def __init__(self, client, title=INITIAL_TITLE):
+        super().__init__(client, title, {})
+        asyncio.create_task(self.load_title(title))
 
 class MovieMenu(menu.Menu):
     async def load_menu(self):
