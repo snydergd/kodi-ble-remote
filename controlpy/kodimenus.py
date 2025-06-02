@@ -99,6 +99,7 @@ class MovieMenu(menu.Menu):
 
 class SystemMenu(menu.Menu):
     async def shutdown(self):
+        self.clear()
         kodi = await get_kodi()
         await kodi.call_method("System.Shutdown")
 
